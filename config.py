@@ -23,20 +23,17 @@ WATCH_TARGETS = [
         # Palavras que indicam que ainda estamos em lista de espera
         "waitlist_keywords": ["waitlist", "join the waitlist", "notify me"],
     },
-    # TODO: falta o URL real da pagina de listagem da epoca em
-    # tickets.formula1.com (a que mostra um cartao por corrida, com botao
-    # "JOIN THE WAITLIST" ou "SHOP NOW"). Assim que tiveres esse URL, mete-o
-    # aqui -- e um sinal mais fiavel do que o URL de waitlist isolado acima,
-    # porque reflete o que o proprio site mostra para a corrida de Portugal
-    # especificamente. Usa scope_keyword="portug" para o monitor procurar
-    # so dentro do cartao do Portugal, e nao no de outra corrida qualquer.
-    # {
-    #     "name": "F1 Ticketing - Listagem da epoca (Portugal)",
-    #     "url": "https://tickets.formula1.com/en/...",
-    #     "scope_keyword": "portug",
-    #     "on_sale_keywords": ["shop now"],
-    #     "waitlist_keywords": ["join the waitlist"],
-    # },
+    {
+        # Pagina de listagem da epoca -- mostra um cartao por corrida, cada
+        # um com "JOIN THE WAITLIST" ou "SHOP NOW". scope_keyword="portug"
+        # faz o monitor procurar so dentro do cartao do Portugal, ignorando
+        # o botao de qualquer outra corrida na mesma pagina.
+        "name": "F1 Ticketing - Listagem da epoca (Portugal)",
+        "url": "https://ticketing.formula1.com/",
+        "scope_keyword": "portug",
+        "on_sale_keywords": ["shop now", "book now"],
+        "waitlist_keywords": ["join the waitlist"],
+    },
     {
         "name": "Autodromo do Algarve - Subscricao",
         "url": "https://f1.autodromodoalgarve.com/pt-pt/",
