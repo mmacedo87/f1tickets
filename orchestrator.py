@@ -12,7 +12,7 @@ import asyncio
 
 import uvicorn
 
-from config import WATCH_TARGETS, POLL_INTERVAL_SECONDS
+from config import WATCH_TARGETS, get_poll_interval_seconds
 from monitor_agent import check_all
 from alert_agent import raise_alert
 from state_store import log_event
@@ -21,12 +21,17 @@ from dashboard_app import app
 
 async def agent_loop():
     log_event("Orchestrator iniciado. A monitorizar os alvos configurados...")
+    last_interval = None
     while True:
         results = await check_all(WATCH_TARGETS)
         for result in results:
             if result["changed"]:
                 await raise_alert(result["name"], result["url"])
-        await asyncio.sleep(POLL_INTERVAL_SECONDS)
+        interval = get_poll_interval_seconds()
+        if interval != last_interval:
+            log_event(f"Ritmo de verificacao ajustado para 1x a cada {interval}s.")
+            last_interval = interval
+        await asyncio.sleep(interval)
 
 
 async def run_dashboard():

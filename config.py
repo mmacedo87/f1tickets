@@ -3,6 +3,8 @@ Configuracao do F1 Ticket Watcher.
 Ajusta os valores abaixo antes de correr o sistema.
 """
 import os
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
@@ -26,9 +28,40 @@ WATCH_TARGETS = [
     },
 ]
 
-# Intervalo entre verificacoes (segundos). Nao uses um valor demasiado baixo
-# -- respeita o servidor e evita ser bloqueado por excesso de pedidos.
-POLL_INTERVAL_SECONDS = 45
+# Fuso horario usado para decidir o ritmo de verificacao abaixo.
+TIMEZONE = ZoneInfo("Europe/Lisbon")
+
+# Dia em que se espera que os bilhetes fiquem a venda.
+SALE_DATE = date(2026, 9, 21)
+
+# Ritmo de verificacao, consoante a proximidade do dia de abertura da
+# bilheteira (SALE_DATE). Ajusta com bom senso -- pedidos demasiado
+# frequentes podem levar a que o IP seja bloqueado.
+#   - Ate ao dia anterior a SALE_DATE (exclusive): 2x/dia
+#   - Nesse dia, das 00h as 18h: 1x/hora
+#   - Nesse dia, das 18h as 23h: 4x/hora (a cada 15 min)
+#   - Nesse dia, a partir das 23h (e dai em diante): a cada 5 segundos
+TWICE_A_DAY_SECONDS = 12 * 3600
+HOURLY_SECONDS = 3600
+FOUR_TIMES_AN_HOUR_SECONDS = 15 * 60
+RAPID_SECONDS = 5
+
+
+def get_poll_interval_seconds(now: datetime | None = None) -> int:
+    """Devolve o intervalo (em segundos) ate a proxima verificacao."""
+    now = now or datetime.now(TIMEZONE)
+    eve_of_sale = SALE_DATE - timedelta(days=1)
+
+    if now.date() < eve_of_sale:
+        return TWICE_A_DAY_SECONDS
+    if now.date() == eve_of_sale:
+        if now.time() < time(18, 0):
+            return HOURLY_SECONDS
+        if now.time() < time(23, 0):
+            return FOUR_TIMES_AN_HOUR_SECONDS
+        return RAPID_SECONDS
+    # a partir do dia da venda, mantem o ritmo mais agressivo
+    return RAPID_SECONDS
 
 # --- Telegram (agente de alerta) ---
 # Cria um bot com o @BotFather no Telegram e obtem o token.
