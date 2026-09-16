@@ -26,7 +26,7 @@
 </head>
 <body>
   <h1>F1 Ticket Watcher - GP Portugal 2027</h1>
-  <p class="meta">Atualiza automaticamente a cada 3 segundos.</p>
+  <p class="meta">Esta pagina relê o estado local a cada 3 segundos (nao faz pedidos aos sites). Ritmo real de verificacao: <span id="pollInterval">-</span>.</p>
 
   <div class="toolbar">
     <button id="refreshBtn" onclick="manualRefresh()">Verificar agora</button>
@@ -39,9 +39,19 @@
   <div id="events"></div>
 
 <script>
+function formatInterval(seconds) {
+  if (seconds == null) return '-';
+  if (seconds < 60) return `1x a cada ${seconds}s`;
+  if (seconds < 3600) return `1x a cada ${Math.round(seconds / 60)} min`;
+  if (seconds < 86400) return `1x a cada ${Math.round(seconds / 3600)}h`;
+  return `${Math.round(86400 / seconds)}x por dia`;
+}
+
 async function refresh() {
   const res = await fetch('/api/status');
   const data = await res.json();
+
+  document.getElementById('pollInterval').textContent = formatInterval(data.poll_interval_seconds);
 
   const targetsDiv = document.getElementById('targets');
   targetsDiv.innerHTML = '';

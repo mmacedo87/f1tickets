@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from alert_agent import raise_alert
-from config import WATCH_TARGETS
+from config import WATCH_TARGETS, get_poll_interval_seconds
 from monitor_agent import check_all
 from state_store import load_state, log_event
 
@@ -26,7 +26,9 @@ async def dashboard(request: Request):
 
 @app.get("/api/status")
 async def status():
-    return load_state()
+    state = load_state()
+    state["poll_interval_seconds"] = get_poll_interval_seconds()
+    return state
 
 
 @app.post("/api/refresh")
