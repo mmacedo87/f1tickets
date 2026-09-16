@@ -30,6 +30,22 @@ def _hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _first_match(body: str, keywords: list[str]) -> str | None:
+    return next((kw for kw in keywords if kw.lower() in body), None)
+
+
+def _context(body: str, keyword: str, radius: int = 60) -> str:
+    """Devolve o texto a volta da 1a ocorrencia de `keyword`, para se poder
+    confirmar visualmente se o match e real ou apanhou texto de outro
+    sitio da pagina (menu, rodape, cross-sell de outra corrida, etc.)."""
+    idx = body.find(keyword.lower())
+    if idx == -1:
+        return ""
+    start = max(0, idx - radius)
+    end = min(len(body), idx + len(keyword) + radius)
+    return " ".join(body[start:end].split())
+
+
 async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     """Verifica uma unica URL. Devolve um dicionario com o resultado."""
     name, url = target["name"], target["url"]
@@ -42,19 +58,40 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         return {"name": name, "url": url, "changed": False, "on_sale": False}
 
     content_hash = _hash(body)
-    on_sale = any(kw.lower() in body for kw in target.get("on_sale_keywords", []))
+    on_sale_match = _first_match(body, target.get("on_sale_keywords", []))
     still_waitlist = any(kw.lower() in body for kw in target.get("waitlist_keywords", []))
+    # so consideramos "a venda" quando a keyword de venda aparece E a
+    # keyword de lista de espera ja desapareceu -- um match isolado de
+    # "buy tickets" enquanto a pagina ainda diz "waitlist" e mais
+    # provavelmente um link generico de menu do que o estado real desta
+    # corrida, por isso nao conta sozinho.
+    on_sale = bool(on_sale_match) and not still_waitlist
+
+    if on_sale_match:
+        snippet = _context(body, on_sale_match)
+        log_event(
+            f"[{name}] keyword de venda '{on_sale_match}' encontrada"
+            f" (ainda em lista de espera: {still_waitlist}) -- contexto: \"...{snippet}...\"",
+            level="info",
+        )
 
     previous_state = update_target(name, status="a verificar")
     was_on_sale = previous_state["targets"].get(name, {}).get("on_sale", False)
     changed_state = on_sale and not was_on_sale
+
+    if on_sale:
+        status = "A VENDA !!!"
+    elif on_sale_match:
+        status = "keyword de venda encontrada mas ainda em lista de espera (possivel falso positivo)"
+    else:
+        status = "em lista de espera"
 
     update_target(
         name,
         content_hash=content_hash,
         on_sale=on_sale,
         still_waitlist=still_waitlist,
-        status="A VENDA !!!" if on_sale else "em lista de espera",
+        status=status,
         url=url,
     )
 
