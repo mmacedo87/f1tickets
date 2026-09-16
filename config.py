@@ -15,8 +15,11 @@ WATCH_TARGETS = [
     {
         "name": "F1 Ticketing - Portugal Waitlist",
         "url": "https://ticketing.formula1.com/tickets/en/portugal/general-admission-f1-portimao-waitlist",
-        # Palavras que indicam que os bilhetes JA estao a venda
-        "on_sale_keywords": ["buy tickets", "add to cart", "select seats", "comprar bilhete"],
+        # "book now" confirmado pelo utilizador como o CTA real usado pelo
+        # site quando os bilhetes de uma corrida estao a venda (visto no
+        # cartao do GP do Brasil em tickets.formula1.com). Mantemos os
+        # antigos como fallback, mas "book now" e o sinal mais fiavel.
+        "on_sale_keywords": ["book now", "buy tickets", "add to cart", "select seats", "comprar bilhete"],
         # Palavras que indicam que ainda estamos em lista de espera
         "waitlist_keywords": ["waitlist", "join the waitlist", "notify me"],
     },
