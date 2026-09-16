@@ -4,9 +4,11 @@ Responsavel por verificar periodicamente cada URL em WATCH_TARGETS e
 detetar quando o conteudo muda de "lista de espera" para "a venda".
 
 Nota: usa apenas pedidos HTTP normais (httpx), tal como um browser faria
-ao carregar a pagina. Nao tenta contornar CAPTCHAs, limites de pedidos
-ou qualquer mecanismo anti-bot -- se um site bloquear o pedido, o agente
-regista o erro e tenta novamente no proximo ciclo.
+ao carregar a pagina -- os headers abaixo imitam um browser de desktop
+comum para que o pedido seja tratado como qualquer visita normal (nada
+de rotacao de IP, resolucao de CAPTCHA ou outro mecanismo de evasao).
+Se um site bloquear o pedido mesmo assim, o agente regista o erro e
+tenta novamente no proximo ciclo -- nunca insiste de forma agressiva.
 """
 import hashlib
 
@@ -16,9 +18,11 @@ from state_store import update_target, log_event
 
 HEADERS = {
     "User-Agent": (
-        "Mozilla/5.0 (compatible; F1TicketWatcher/1.0; "
-        "monitorizacao pessoal, nao automatiza compra)"
-    )
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.8",
 }
 
 
