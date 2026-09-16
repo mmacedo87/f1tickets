@@ -15,14 +15,28 @@ WATCH_TARGETS = [
     {
         "name": "F1 Ticketing - Portugal Waitlist",
         "url": "https://ticketing.formula1.com/tickets/en/portugal/general-admission-f1-portimao-waitlist",
-        # "book now" confirmado pelo utilizador como o CTA real usado pelo
-        # site quando os bilhetes de uma corrida estao a venda (visto no
-        # cartao do GP do Brasil em tickets.formula1.com). Mantemos os
-        # antigos como fallback, mas "book now" e o sinal mais fiavel.
-        "on_sale_keywords": ["book now", "buy tickets", "add to cart", "select seats", "comprar bilhete"],
+        # "book now" / "shop now" confirmados pelo utilizador como os CTAs
+        # reais usados pelo site quando os bilhetes de uma corrida estao a
+        # venda (vistos nos cartoes do GP do Brasil e na listagem da epoca
+        # em tickets.formula1.com). Mantemos os antigos como fallback.
+        "on_sale_keywords": ["book now", "shop now", "buy tickets", "add to cart", "select seats", "comprar bilhete"],
         # Palavras que indicam que ainda estamos em lista de espera
         "waitlist_keywords": ["waitlist", "join the waitlist", "notify me"],
     },
+    # TODO: falta o URL real da pagina de listagem da epoca em
+    # tickets.formula1.com (a que mostra um cartao por corrida, com botao
+    # "JOIN THE WAITLIST" ou "SHOP NOW"). Assim que tiveres esse URL, mete-o
+    # aqui -- e um sinal mais fiavel do que o URL de waitlist isolado acima,
+    # porque reflete o que o proprio site mostra para a corrida de Portugal
+    # especificamente. Usa scope_keyword="portug" para o monitor procurar
+    # so dentro do cartao do Portugal, e nao no de outra corrida qualquer.
+    # {
+    #     "name": "F1 Ticketing - Listagem da epoca (Portugal)",
+    #     "url": "https://tickets.formula1.com/en/...",
+    #     "scope_keyword": "portug",
+    #     "on_sale_keywords": ["shop now"],
+    #     "waitlist_keywords": ["join the waitlist"],
+    # },
     {
         "name": "Autodromo do Algarve - Subscricao",
         "url": "https://f1.autodromodoalgarve.com/pt-pt/",

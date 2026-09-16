@@ -46,6 +46,22 @@ def _context(body: str, keyword: str, radius: int = 60) -> str:
     return " ".join(body[start:end].split())
 
 
+def _scope(body: str, scope_keyword: str | None, radius: int = 600) -> str | None:
+    """Para paginas com varias corridas (ex.: uma listagem da epoca), limita
+    a procura ao trecho a volta de `scope_keyword` (ex.: "portug"), em vez
+    de a pagina inteira -- evita apanhar o botao de outra corrida qualquer.
+    Devolve None se a pagina nem sequer tem `scope_keyword` (a corrida
+    ainda podera nao estar listada)."""
+    if not scope_keyword:
+        return body
+    idx = body.find(scope_keyword.lower())
+    if idx == -1:
+        return None
+    start = max(0, idx - radius)
+    end = min(len(body), idx + len(scope_keyword) + radius)
+    return body[start:end]
+
+
 async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     """Verifica uma unica URL. Devolve um dicionario com o resultado."""
     name, url = target["name"], target["url"]
@@ -58,8 +74,26 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         return {"name": name, "url": url, "changed": False, "on_sale": False}
 
     content_hash = _hash(body)
-    on_sale_match = _first_match(body, target.get("on_sale_keywords", []))
-    still_waitlist = any(kw.lower() in body for kw in target.get("waitlist_keywords", []))
+    scoped_body = _scope(body, target.get("scope_keyword"))
+
+    if scoped_body is None:
+        log_event(
+            f"[{name}] scope_keyword '{target.get('scope_keyword')}' nao encontrado na pagina"
+            " -- a corrida podera ainda nao estar listada.",
+            level="warn",
+        )
+        update_target(
+            name,
+            content_hash=content_hash,
+            on_sale=False,
+            still_waitlist=False,
+            status="corrida nao encontrada na pagina (ainda)",
+            url=url,
+        )
+        return {"name": name, "url": url, "changed": False, "on_sale": False}
+
+    on_sale_match = _first_match(scoped_body, target.get("on_sale_keywords", []))
+    still_waitlist = any(kw.lower() in scoped_body for kw in target.get("waitlist_keywords", []))
     # so consideramos "a venda" quando a keyword de venda aparece E a
     # keyword de lista de espera ja desapareceu -- um match isolado de
     # "buy tickets" enquanto a pagina ainda diz "waitlist" e mais
@@ -68,7 +102,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     on_sale = bool(on_sale_match) and not still_waitlist
 
     if on_sale_match:
-        snippet = _context(body, on_sale_match)
+        snippet = _context(scoped_body, on_sale_match)
         log_event(
             f"[{name}] keyword de venda '{on_sale_match}' encontrada"
             f" (ainda em lista de espera: {still_waitlist}) -- contexto: \"...{snippet}...\"",
