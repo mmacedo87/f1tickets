@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>F1 Ticket Watcher - GP Portugal 2027</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 1.4rem; }
+  .target { border: 1px solid #8884; border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+  .badge.waiting { background: #f0ad4e33; color: #b8860b; }
+  .badge.onsale { background: #2ecc7133; color: #1e8449; }
+  .badge.error { background: #e74c3c33; color: #c0392b; }
+  .meta { color: #888; font-size: 0.85rem; margin-top: 4px; }
+  #events { font-family: ui-monospace, monospace; font-size: 0.82rem; max-height: 260px; overflow-y: auto; background: #8881; border-radius: 10px; padding: 10px 14px; }
+  .event { margin-bottom: 4px; }
+  .event.alert { color: #1e8449; font-weight: 700; }
+  .event.error { color: #c0392b; }
+</style>
+</head>
+<body>
+  <h1>F1 Ticket Watcher - GP Portugal 2027</h1>
+  <p class="meta">Atualiza automaticamente a cada 3 segundos.</p>
+
+  <div id="targets"></div>
+
+  <h2>Registo de eventos</h2>
+  <div id="events"></div>
+
+<script>
+async function refresh() {
+  const res = await fetch('/api/status');
+  const data = await res.json();
+
+  const targetsDiv = document.getElementById('targets');
+  targetsDiv.innerHTML = '';
+  for (const [name, t] of Object.entries(data.targets || {})) {
+    const badgeClass = t.status && t.status.includes('VENDA') ? 'onsale'
+                      : t.status === 'erro' ? 'error' : 'waiting';
+    targetsDiv.innerHTML += `
+      <div class="target">
+        <strong>${name}</strong>
+        <span class="badge ${badgeClass}">${t.status || 'a iniciar'}</span>
+        <div class="meta">Ultima verificacao: ${t.last_checked || '-'}</div>
+        <div class="meta"><a href="${t.url || '#'}" target="_blank">${t.url || ''}</a></div>
+      </div>`;
+  }
+
+  const eventsDiv = document.getElementById('events');
+  eventsDiv.innerHTML = (data.events || []).slice().reverse().map(e =>
+    `<div class="event ${e.level}">[${e.time}] ${e.message}</div>`
+  ).join('');
+}
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>
