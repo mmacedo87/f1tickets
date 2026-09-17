@@ -77,31 +77,33 @@
   .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: stretch; }
   @media (max-width: 680px) { .layout { grid-template-columns: 1fr; } }
 
-  .primary-card {
-    border: 1px solid var(--border); border-radius: 14px; padding: 26px 28px;
+  /* base card look shared by the primary target and the secondary ones --
+     same shape (radius, border, surface), only size/emphasis differs */
+  .target-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 20px; display: flex; flex-direction: column; gap: 6px;
+    justify-content: center;
+  }
+  .target-card .flag { font-size: 1.1rem; line-height: 1; opacity: 0.6; }
+  .target-card .site-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-dim); font-weight: 700;
+  }
+  .target-card .name { font-size: 0.95rem; font-weight: 700; }
+  .target-card .badge { font-size: 0.68rem; padding: 3px 10px; width: fit-content; }
+  .target-card .meta { font-size: 0.76rem; }
+
+  .target-card--primary {
+    padding: 26px 28px; gap: 10px; min-height: 170px; height: 100%;
     background: linear-gradient(155deg, var(--red-soft), var(--surface) 55%);
-    box-shadow: 0 0 0 1px transparent, 0 10px 30px -12px #e1060055;
-    display: flex; flex-direction: column; justify-content: center; gap: 10px;
-    min-height: 170px;
+    box-shadow: 0 10px 30px -12px #e1060055;
   }
-  .primary-card .flag { font-size: 1.7rem; line-height: 1; }
-  .primary-card .site-label {
-    font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--accent); font-weight: 700;
-  }
-  .primary-card .name { font-size: 1.35rem; font-weight: 900; margin: 2px 0 6px; letter-spacing: 0.01em; }
-  .primary-card .badge { font-size: 0.9rem; padding: 6px 16px; width: fit-content; }
+  .target-card--primary .flag { font-size: 1.7rem; opacity: 1; }
+  .target-card--primary .site-label { color: var(--accent); font-size: 0.76rem; letter-spacing: 0.08em; }
+  .target-card--primary .name { font-size: 1.35rem; font-weight: 900; margin: 2px 0 6px; letter-spacing: 0.01em; }
+  .target-card--primary .badge { font-size: 0.9rem; padding: 6px 16px; }
 
   .secondary-list { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
-  .secondary-row {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
-    padding: 12px 20px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    flex-wrap: wrap;
-  }
-  .secondary-row .name { font-size: 0.85rem; font-weight: 600; }
-  .secondary-row .badge { font-size: 0.68rem; padding: 3px 10px; }
-  .secondary-row .meta { margin-top: 0; }
 
   h2.section {
     font-size: 0.82rem; color: var(--text-dim); text-transform: uppercase;
@@ -168,7 +170,7 @@ async function refresh() {
 
     if (t.primary) {
       primaryDiv.innerHTML += `
-        <div class="primary-card">
+        <div class="target-card target-card--primary">
           <div class="flag">🏁</div>
           <div class="site-label">Site oficial de compra</div>
           <div class="name">${name}</div>
@@ -178,10 +180,13 @@ async function refresh() {
         </div>`;
     } else {
       secondaryDiv.innerHTML += `
-        <div class="secondary-row">
-          <span class="name">${name}</span>
+        <div class="target-card">
+          <div class="flag">🏁</div>
+          <div class="site-label">Fonte secundária</div>
+          <div class="name">${name}</div>
           <span class="badge ${badgeClass}">${t.status || 'a iniciar'}</span>
-          <span class="meta">${t.last_checked || '-'}</span>
+          <div class="meta">Ultima verificacao: ${t.last_checked || '-'}</div>
+          <div class="meta"><a href="${t.url || '#'}" target="_blank">${t.url || ''}</a></div>
         </div>`;
     }
   }
