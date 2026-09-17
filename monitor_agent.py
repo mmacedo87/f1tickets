@@ -70,7 +70,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         body = resp.text.lower()
     except httpx.HTTPError as exc:
         log_event(f"[{name}] erro ao aceder a pagina: {exc}", level="error")
-        update_target(name, status="erro", last_error=str(exc))
+        update_target(name, status="erro", last_error=str(exc), url=url, primary=target.get("primary", False))
         return {"name": name, "url": url, "changed": False, "on_sale": False}
 
     content_hash = _hash(body)
@@ -89,6 +89,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
             still_waitlist=False,
             status="corrida nao encontrada na pagina (ainda)",
             url=url,
+            primary=target.get("primary", False),
         )
         return {"name": name, "url": url, "changed": False, "on_sale": False}
 
@@ -127,6 +128,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         still_waitlist=still_waitlist,
         status=status,
         url=url,
+        primary=target.get("primary", False),
     )
 
     if changed_state:

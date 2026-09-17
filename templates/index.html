@@ -2,40 +2,144 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>F1 Ticket Watcher - GP Portugal 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap">
 <style>
-  :root { color-scheme: light dark; }
-  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
-  h1 { font-size: 1.4rem; }
-  .target { border: 1px solid #8884; border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
-  .badge.waiting { background: #f0ad4e33; color: #b8860b; }
-  .badge.onsale { background: #2ecc7133; color: #1e8449; }
-  .badge.error { background: #e74c3c33; color: #c0392b; }
-  .meta { color: #888; font-size: 0.85rem; margin-top: 4px; }
-  #events { font-family: ui-monospace, monospace; font-size: 0.82rem; max-height: 260px; overflow-y: auto; background: #8881; border-radius: 10px; padding: 10px 14px; }
-  .event { margin-bottom: 4px; }
-  .event.alert { color: #1e8449; font-weight: 700; }
-  .event.error { color: #c0392b; }
-  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  #refreshBtn { padding: 8px 16px; border-radius: 8px; border: 1px solid #8884; background: #4a90d933; color: inherit; font-size: 0.9rem; cursor: pointer; }
-  #refreshBtn:hover:not(:disabled) { background: #4a90d955; }
-  #refreshBtn:disabled { opacity: 0.6; cursor: default; }
-  #refreshStatus { font-size: 0.85rem; color: #888; }
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0d;
+    --surface: #15161c;
+    --surface-2: #1d1f26;
+    --border: #2b2d36;
+    --text: #f4f4f6;
+    --text-dim: #9195a1;
+    --accent: #e10600;
+    --accent-hover: #ff1a10;
+    --green: #17c964;
+    --green-soft: #17c96422;
+    --amber: #f5a623;
+    --amber-soft: #f5a62322;
+    --red-soft: #e1060022;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Titillium Web', -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+    max-width: 1040px; margin: 0 auto; padding: 0 20px 40px;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0; border-bottom: 3px solid var(--accent); margin-bottom: 18px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .f1 {
+    background: var(--accent); color: #fff; font-weight: 900; font-size: 1.05rem;
+    padding: 4px 9px; border-radius: 4px; letter-spacing: 0.02em;
+  }
+  .brand h1 {
+    font-size: 1.15rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; margin: 0; color: var(--text);
+  }
+  .toolbar { display: flex; align-items: center; gap: 12px; }
+  #refreshBtn {
+    padding: 10px 20px; border-radius: 999px; border: none;
+    background: var(--accent); color: #fff; font-family: inherit;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    font-size: 0.85rem; cursor: pointer; transition: background .15s;
+  }
+  #refreshBtn:hover:not(:disabled) { background: var(--accent-hover); }
+  #refreshBtn:disabled { opacity: 0.55; cursor: default; }
+  #refreshStatus { font-size: 0.8rem; color: var(--text-dim); }
+
+  .subbar {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px;
+  }
+  .pill-info {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 999px; font-size: 0.78rem;
+  }
+  .pill-info b { color: var(--text); font-weight: 600; }
+
+  .badge {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .badge.waiting { background: var(--amber-soft); color: var(--amber); }
+  .badge.onsale { background: var(--green-soft); color: var(--green); }
+  .badge.error { background: var(--red-soft); color: #ff6b63; }
+  .meta { color: var(--text-dim); font-size: 0.82rem; margin-top: 4px; }
+  .meta a { color: var(--text-dim); }
+
+  .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: stretch; }
+  @media (max-width: 680px) { .layout { grid-template-columns: 1fr; } }
+
+  .primary-card {
+    border: 1px solid var(--border); border-radius: 14px; padding: 26px 28px;
+    background: linear-gradient(155deg, var(--red-soft), var(--surface) 55%);
+    box-shadow: 0 0 0 1px transparent, 0 10px 30px -12px #e1060055;
+    display: flex; flex-direction: column; justify-content: center; gap: 10px;
+    min-height: 170px;
+  }
+  .primary-card .flag { font-size: 1.7rem; line-height: 1; }
+  .primary-card .site-label {
+    font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); font-weight: 700;
+  }
+  .primary-card .name { font-size: 1.35rem; font-weight: 900; margin: 2px 0 6px; letter-spacing: 0.01em; }
+  .primary-card .badge { font-size: 0.9rem; padding: 6px 16px; width: fit-content; }
+
+  .secondary-list { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+  .secondary-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    flex-wrap: wrap;
+  }
+  .secondary-row .name { font-size: 0.85rem; font-weight: 600; }
+  .secondary-row .badge { font-size: 0.68rem; padding: 3px 10px; }
+  .secondary-row .meta { margin-top: 0; }
+
+  h2.section {
+    font-size: 0.82rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.08em; margin: 32px 0 10px; font-weight: 700;
+  }
+  #events {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 0.8rem;
+    max-height: 260px; overflow-y: auto; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
+  }
+  .event { margin-bottom: 5px; color: var(--text-dim); }
+  .event.alert { color: var(--green); font-weight: 700; }
+  .event.error { color: #ff6b63; }
 </style>
 </head>
 <body>
-  <h1>F1 Ticket Watcher - GP Portugal 2027</h1>
-  <p class="meta">Esta pagina relê o estado local a cada 3 segundos (nao faz pedidos aos sites). Ritmo real de verificacao: <span id="pollInterval">-</span>.</p>
-
-  <div class="toolbar">
-    <button id="refreshBtn" onclick="manualRefresh()">Verificar agora</button>
-    <span id="refreshStatus"></span>
+  <div class="topbar">
+    <div class="brand">
+      <span class="f1">F1</span>
+      <h1>Ticket Watcher — GP Portugal</h1>
+    </div>
+    <div class="toolbar">
+      <span id="refreshStatus"></span>
+      <button id="refreshBtn" onclick="manualRefresh()">Verificar agora</button>
+    </div>
   </div>
 
-  <div id="targets"></div>
+  <div class="subbar">
+    <span class="pill-info">Ritmo real: <b id="pollInterval">-</b></span>
+    <span class="pill-info">Esta página relê o estado local a cada <b>3s</b> (sem pedidos aos sites)</span>
+  </div>
 
-  <h2>Registo de eventos</h2>
+  <div class="layout">
+    <div id="primaryTarget"></div>
+    <div id="secondaryTargets" class="secondary-list"></div>
+  </div>
+
+  <h2 class="section">Registo de eventos</h2>
   <div id="events"></div>
 
 <script>
@@ -53,18 +157,33 @@ async function refresh() {
 
   document.getElementById('pollInterval').textContent = formatInterval(data.poll_interval_seconds);
 
-  const targetsDiv = document.getElementById('targets');
-  targetsDiv.innerHTML = '';
+  const primaryDiv = document.getElementById('primaryTarget');
+  const secondaryDiv = document.getElementById('secondaryTargets');
+  primaryDiv.innerHTML = '';
+  secondaryDiv.innerHTML = '';
+
   for (const [name, t] of Object.entries(data.targets || {})) {
     const badgeClass = t.status && t.status.includes('VENDA') ? 'onsale'
                       : t.status === 'erro' ? 'error' : 'waiting';
-    targetsDiv.innerHTML += `
-      <div class="target">
-        <strong>${name}</strong>
-        <span class="badge ${badgeClass}">${t.status || 'a iniciar'}</span>
-        <div class="meta">Ultima verificacao: ${t.last_checked || '-'}</div>
-        <div class="meta"><a href="${t.url || '#'}" target="_blank">${t.url || ''}</a></div>
-      </div>`;
+
+    if (t.primary) {
+      primaryDiv.innerHTML += `
+        <div class="primary-card">
+          <div class="flag">🏁</div>
+          <div class="site-label">Site oficial de compra</div>
+          <div class="name">${name}</div>
+          <span class="badge ${badgeClass}">${t.status || 'a iniciar'}</span>
+          <div class="meta">Ultima verificacao: ${t.last_checked || '-'}</div>
+          <div class="meta"><a href="${t.url || '#'}" target="_blank">${t.url || ''}</a></div>
+        </div>`;
+    } else {
+      secondaryDiv.innerHTML += `
+        <div class="secondary-row">
+          <span class="name">${name}</span>
+          <span class="badge ${badgeClass}">${t.status || 'a iniciar'}</span>
+          <span class="meta">${t.last_checked || '-'}</span>
+        </div>`;
+    }
   }
 
   const eventsDiv = document.getElementById('events');

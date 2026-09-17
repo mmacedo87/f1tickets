@@ -13,6 +13,19 @@ load_dotenv()
 # URLs oficiais a monitorizar (adiciona/remove conforme necessario)
 WATCH_TARGETS = [
     {
+        # Site oficial de venda dos bilhetes do GP de Portugal -- e aqui que
+        # a compra real vai acontecer, por isso e o unico alvo "primary"
+        # (fica em destaque no dashboard; os restantes ficam secundarios).
+        "name": "Portugal F1 GP - Site Oficial",
+        "url": "https://portugalf1gp.com/pt",
+        "primary": True,
+        # Keywords de partida, por analogia com o que ja confirmamos nos
+        # outros sites da F1 -- valida contra o HTML real assim que o site
+        # estiver acessivel (ver IMPLEMENTATION.md, passo 3) e ajusta.
+        "on_sale_keywords": ["comprar bilhete", "comprar bilhetes", "comprar já", "book now", "buy tickets", "adicionar ao carrinho"],
+        "waitlist_keywords": ["lista de espera", "registar", "notifica-me", "brevemente", "em breve"],
+    },
+    {
         "name": "F1 Ticketing - Portugal Waitlist",
         "url": "https://ticketing.formula1.com/tickets/en/portugal/general-admission-f1-portimao-waitlist",
         # "book now" / "shop now" confirmados pelo utilizador como os CTAs
