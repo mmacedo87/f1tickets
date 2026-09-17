@@ -74,7 +74,7 @@
   .meta { color: var(--text-dim); font-size: 0.82rem; margin-top: 4px; }
   .meta a { color: var(--text-dim); }
 
-  .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: stretch; }
+  .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
   @media (max-width: 680px) { .layout { grid-template-columns: 1fr; } }
 
   /* base card look shared by the primary target and the secondary ones --
@@ -94,14 +94,14 @@
   .target-card .meta { font-size: 0.76rem; }
 
   .target-card--primary {
-    padding: 26px 28px; gap: 10px; min-height: 170px; height: 100%;
+    padding: 18px 22px; gap: 7px;
     background: linear-gradient(155deg, var(--red-soft), var(--surface) 55%);
     box-shadow: 0 10px 30px -12px #e1060055;
   }
-  .target-card--primary .flag { font-size: 1.7rem; opacity: 1; }
-  .target-card--primary .site-label { color: var(--accent); font-size: 0.76rem; letter-spacing: 0.08em; }
-  .target-card--primary .name { font-size: 1.35rem; font-weight: 900; margin: 2px 0 6px; letter-spacing: 0.01em; }
-  .target-card--primary .badge { font-size: 0.9rem; padding: 6px 16px; }
+  .target-card--primary .flag { font-size: 1.3rem; opacity: 1; }
+  .target-card--primary .site-label { color: var(--accent); font-size: 0.72rem; letter-spacing: 0.08em; }
+  .target-card--primary .name { font-size: 1.08rem; font-weight: 900; margin: 1px 0 3px; letter-spacing: 0.01em; }
+  .target-card--primary .badge { font-size: 0.76rem; padding: 4px 12px; }
 
   .secondary-list { display: flex; flex-direction: column; gap: 10px; justify-content: center; }
 
@@ -153,10 +153,7 @@ function formatInterval(seconds) {
   return `${Math.round(86400 / seconds)}x por dia`;
 }
 
-async function refresh() {
-  const res = await fetch('/api/status');
-  const data = await res.json();
-
+function render(data) {
   document.getElementById('pollInterval').textContent = formatInterval(data.poll_interval_seconds);
 
   const primaryDiv = document.getElementById('primaryTarget');
@@ -193,21 +190,27 @@ async function refresh() {
 
   const eventsDiv = document.getElementById('events');
   eventsDiv.innerHTML = (data.events || []).slice().reverse().map(e =>
-    `<div class="event ${e.level}">[${e.time}] ${e.message}</div>`
+    `<div class="event ${e.level}">[${e.time}] - ${e.message}</div>`
   ).join('');
 }
+
+async function refresh() {
+  const res = await fetch('/api/status');
+  render(await res.json());
+}
+
 async function manualRefresh() {
   const btn = document.getElementById('refreshBtn');
   const statusEl = document.getElementById('refreshStatus');
   btn.disabled = true;
   statusEl.textContent = 'A verificar...';
   try {
-    await fetch('/api/refresh', { method: 'POST' });
+    const res = await fetch('/api/refresh', { method: 'POST' });
+    render(await res.json());
     statusEl.textContent = 'Verificacao concluida.';
   } catch (err) {
     statusEl.textContent = 'Falha ao verificar.';
   } finally {
-    await refresh();
     btn.disabled = false;
     setTimeout(() => { statusEl.textContent = ''; }, 4000);
   }

@@ -34,18 +34,6 @@ def _first_match(body: str, keywords: list[str]) -> str | None:
     return next((kw for kw in keywords if kw.lower() in body), None)
 
 
-def _context(body: str, keyword: str, radius: int = 60) -> str:
-    """Devolve o texto a volta da 1a ocorrencia de `keyword`, para se poder
-    confirmar visualmente se o match e real ou apanhou texto de outro
-    sitio da pagina (menu, rodape, cross-sell de outra corrida, etc.)."""
-    idx = body.find(keyword.lower())
-    if idx == -1:
-        return ""
-    start = max(0, idx - radius)
-    end = min(len(body), idx + len(keyword) + radius)
-    return " ".join(body[start:end].split())
-
-
 def _scope(body: str, scope_keyword: str | None, radius: int = 600) -> str | None:
     """Para paginas com varias corridas (ex.: uma listagem da epoca), limita
     a procura ao trecho a volta de `scope_keyword` (ex.: "portug"), em vez
@@ -69,7 +57,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         resp = await client.get(url, headers=HEADERS, timeout=20, follow_redirects=True)
         body = resp.text.lower()
     except httpx.HTTPError as exc:
-        log_event(f"[{name}] erro ao aceder a pagina: {exc}", level="error")
+        log_event(f"verificado o site {name} - erro: {exc}", level="error")
         update_target(name, status="erro", last_error=str(exc), url=url, primary=target.get("primary", False))
         return {"name": name, "url": url, "changed": False, "on_sale": False}
 
@@ -77,17 +65,14 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     scoped_body = _scope(body, target.get("scope_keyword"))
 
     if scoped_body is None:
-        log_event(
-            f"[{name}] scope_keyword '{target.get('scope_keyword')}' nao encontrado na pagina"
-            " -- a corrida podera ainda nao estar listada.",
-            level="warn",
-        )
+        status = "corrida nao encontrada na pagina (ainda)"
+        log_event(f"verificado o site {name} - {status}", level="warn")
         update_target(
             name,
             content_hash=content_hash,
             on_sale=False,
             still_waitlist=False,
-            status="corrida nao encontrada na pagina (ainda)",
+            status=status,
             url=url,
             primary=target.get("primary", False),
         )
@@ -101,14 +86,6 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     # provavelmente um link generico de menu do que o estado real desta
     # corrida, por isso nao conta sozinho.
     on_sale = bool(on_sale_match) and not still_waitlist
-
-    if on_sale_match:
-        snippet = _context(scoped_body, on_sale_match)
-        log_event(
-            f"[{name}] keyword de venda '{on_sale_match}' encontrada"
-            f" (ainda em lista de espera: {still_waitlist}) -- contexto: \"...{snippet}...\"",
-            level="info",
-        )
 
     previous_state = update_target(name, status="a verificar")
     was_on_sale = previous_state["targets"].get(name, {}).get("on_sale", False)
@@ -131,8 +108,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
         primary=target.get("primary", False),
     )
 
-    if changed_state:
-        log_event(f"[{name}] MUDANCA DETETADA -- parece estar a venda!", level="alert")
+    log_event(f"verificado o site {name} - {status}", level="alert" if on_sale else "info")
 
     return {"name": name, "url": url, "changed": changed_state, "on_sale": on_sale}
 
