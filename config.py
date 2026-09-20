@@ -104,3 +104,26 @@ STATE_FILE = "state.json"
 
 # Se True, abre automaticamente o browser na pagina assim que deteta a mudanca
 AUTO_OPEN_BROWSER_ON_ALERT = True
+
+# --- Purchase Agent (login + selecao ate ao carrinho) ---
+# Login no site oficial nao usa password -- e um codigo enviado por email
+# (ver LOGIN_FLOW.md). O agente pede este email, pausa a espera do codigo
+# (pedido por Telegram) e so avanca ate ao carrinho: o pagamento e SEMPRE
+# confirmado manualmente por um humano.
+SITE_EMAIL = os.environ.get("SITE_EMAIL", "")
+
+# Canal do browser usado pelo Playwright. Nalgumas maquinas os binarios
+# proprios do Playwright (chromium/webkit) nao correm e e preciso usar o
+# Chrome do sistema -- ver nota tecnica em LOGIN_FLOW.md.
+BROWSER_CHANNEL = os.environ.get("BROWSER_CHANNEL", "chrome")
+
+# Bilhete a procurar primeiro, e para quantas pessoas.
+TICKET_PREFERENCE = "2 dias"
+TICKET_QUANTITY = 2
+
+# Se TICKET_PREFERENCE nao existir na pagina, cai para esta opcao.
+TICKET_FALLBACK = "General Admission (3 dias)"
+
+# Quanto tempo (segundos) esperar pela tua resposta com o codigo OTP no
+# Telegram antes de desistir do fluxo de compra.
+OTP_REPLY_TIMEOUT_SECONDS = 300

@@ -59,7 +59,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
     except httpx.HTTPError as exc:
         log_event(f"verificado o site {name} - erro: {exc}", level="error")
         update_target(name, status="erro", last_error=str(exc), url=url, primary=target.get("primary", False))
-        return {"name": name, "url": url, "changed": False, "on_sale": False}
+        return {"name": name, "url": url, "changed": False, "on_sale": False, "primary": target.get("primary", False)}
 
     content_hash = _hash(body)
     scoped_body = _scope(body, target.get("scope_keyword"))
@@ -76,7 +76,7 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
             url=url,
             primary=target.get("primary", False),
         )
-        return {"name": name, "url": url, "changed": False, "on_sale": False}
+        return {"name": name, "url": url, "changed": False, "on_sale": False, "primary": target.get("primary", False)}
 
     on_sale_match = _first_match(scoped_body, target.get("on_sale_keywords", []))
     still_waitlist = any(kw.lower() in scoped_body for kw in target.get("waitlist_keywords", []))
@@ -110,7 +110,13 @@ async def check_target(client: httpx.AsyncClient, target: dict) -> dict:
 
     log_event(f"verificado o site {name} - {status}", level="alert" if on_sale else "info")
 
-    return {"name": name, "url": url, "changed": changed_state, "on_sale": on_sale}
+    return {
+        "name": name,
+        "url": url,
+        "changed": changed_state,
+        "on_sale": on_sale,
+        "primary": target.get("primary", False),
+    }
 
 
 async def check_all(targets: list[dict]) -> list[dict]:

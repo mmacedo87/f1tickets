@@ -15,8 +15,19 @@ import uvicorn
 from config import WATCH_TARGETS, get_poll_interval_seconds
 from monitor_agent import check_all
 from alert_agent import raise_alert
+from purchase_agent import run_purchase_flow
 from state_store import log_event
 from dashboard_app import app
+
+
+async def handle_change(result: dict) -> None:
+    """Reage a um alvo que acabou de passar a "a venda". O alvo principal
+    dispara o fluxo de compra (login + carrinho, pagamento sempre manual);
+    os secundarios so avisam -- nao temos sessao la para comprar."""
+    if result["primary"]:
+        await run_purchase_flow()
+    else:
+        await raise_alert(result["name"], result["url"])
 
 
 async def agent_loop():
@@ -26,7 +37,7 @@ async def agent_loop():
         results = await check_all(WATCH_TARGETS)
         for result in results:
             if result["changed"]:
-                await raise_alert(result["name"], result["url"])
+                await handle_change(result)
         interval = get_poll_interval_seconds()
         if interval != last_interval:
             log_event(f"Ritmo de verificacao ajustado para 1x a cada {interval}s.")

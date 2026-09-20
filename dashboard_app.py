@@ -13,6 +13,7 @@ from starlette.requests import Request
 from alert_agent import raise_alert
 from config import WATCH_TARGETS, get_poll_interval_seconds
 from monitor_agent import check_all
+from purchase_agent import run_purchase_flow
 from state_store import load_state, log_event
 
 app = FastAPI(title="F1 Ticket Watcher")
@@ -37,5 +38,8 @@ async def refresh():
     results = await check_all(WATCH_TARGETS)
     for result in results:
         if result["changed"]:
-            await raise_alert(result["name"], result["url"])
+            if result["primary"]:
+                await run_purchase_flow()
+            else:
+                await raise_alert(result["name"], result["url"])
     return load_state()
