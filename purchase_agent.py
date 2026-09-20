@@ -32,6 +32,29 @@ async def _dismiss_cookie_banner(page) -> None:
         pass  # banner pode nao aparecer (ex.: consentimento ja dado antes)
 
 
+async def _dump_debug_html(page, filename: str) -> None:
+    """Grava o HTML atual da pagina e a lista de todos os <input> visiveis
+    (com os seus atributos) num ficheiro local, para diagnosticar um
+    seletor que falhou sem depender de screenshots."""
+    try:
+        html = await page.content()
+        inputs = await page.locator("input").all()
+        lines = [f"<!-- {len(inputs)} <input> encontrados na pagina -->\n"]
+        for i, inp in enumerate(inputs):
+            try:
+                outer = await inp.evaluate("el => el.outerHTML")
+            except Exception as exc:
+                outer = f"(falha a ler: {exc})"
+            lines.append(f"<!-- input #{i}: {outer} -->\n")
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write("".join(lines))
+            f.write("\n<!-- ===== HTML completo da pagina abaixo ===== -->\n")
+            f.write(html)
+        log_event(f"purchase_agent: HTML de diagnostico gravado em {filename}.", "warn")
+    except Exception as exc:
+        log_event(f"purchase_agent: falha ao gravar HTML de diagnostico: {exc}", "error")
+
+
 async def _submit_otp_code(page, code: str) -> bool:
     """Preenche o ecra "VERIFICAR E-MAIL" -- 4 caixas de um digito cada,
     mais o botao "Verificar" (fica desativado ate as 4 estarem cheias)."""
@@ -44,6 +67,7 @@ async def _submit_otp_code(page, code: str) -> bool:
     code_inputs = page.locator("text=VERIFICAR E-MAIL").locator("..").locator("input")
     if await code_inputs.count() != 4:
         log_event("purchase_agent: nao encontrei as 4 caixas do codigo OTP na pagina.", "error")
+        await _dump_debug_html(page, "debug_otp_screen.html")
         return False
 
     for i, digit in enumerate(digits):
