@@ -32,6 +32,31 @@ async def _dismiss_cookie_banner(page) -> None:
         pass  # banner pode nao aparecer (ex.: consentimento ja dado antes)
 
 
+async def _submit_otp_code(page, code: str) -> bool:
+    """Preenche o ecra "VERIFICAR E-MAIL" -- 4 caixas de um digito cada,
+    mais o botao "Verificar" (fica desativado ate as 4 estarem cheias)."""
+    digits = [c for c in code if c.isdigit()]
+    if len(digits) != 4:
+        log_event(f"purchase_agent: codigo recebido ('{code}') nao tem 4 digitos -- a ignorar.", "error")
+        await send_message(f"⚠️ '{code}' não parece um código válido (preciso de 4 dígitos). Responde só com os 4 números.")
+        return False
+
+    code_inputs = page.locator("text=VERIFICAR E-MAIL").locator("..").locator("input")
+    if await code_inputs.count() != 4:
+        log_event("purchase_agent: nao encontrei as 4 caixas do codigo OTP na pagina.", "error")
+        return False
+
+    for i, digit in enumerate(digits):
+        await code_inputs.nth(i).fill(digit)
+
+    await page.get_by_text("Verificar", exact=True).click()
+    log_event("purchase_agent: codigo OTP submetido.", "info")
+    # NOTA: ainda nao confirmamos como e o ecra APOS um codigo correto
+    # (fecha o modal? redireciona?) -- por agora assumimos sucesso se o
+    # clique nao rebentou; a validar ao vivo.
+    return True
+
+
 async def _login(page) -> bool:
     """Pede o codigo de acesso por email e completa o login com o codigo
     que o utilizador colar no Telegram. Devolve True se o login terminou."""
@@ -43,7 +68,7 @@ async def _login(page) -> bool:
     log_event(f"purchase_agent: codigo OTP pedido para {SITE_EMAIL}.", "info")
     await send_message(
         "🔑 O site oficial enviou um código de acesso para o teu email.\n"
-        "Responde a esta mensagem com esse código para eu continuar o login."
+        "Responde a esta mensagem com esse código (4 dígitos) para eu continuar o login."
     )
     code = await wait_for_reply(OTP_REPLY_TIMEOUT_SECONDS)
     if not code:
@@ -51,21 +76,7 @@ async def _login(page) -> bool:
         await send_message("⏱️ Não respondeste ao código a tempo. Login cancelado -- entra manualmente.")
         return False
 
-    # TODO: o campo real de introducao do codigo OTP ainda nao foi
-    # inspecionado (ver LOGIN_FLOW.md, secao "Por completar"). Placeholder
-    # ate confirmarmos o seletor exato com uma captura real do ecra.
-    # await page.locator("SELETOR_DO_CAMPO_DE_CODIGO").fill(code)
-    # await page.get_by_text("Confirmar", exact=False).click()
-    log_event(
-        "purchase_agent: codigo recebido mas o campo de introducao ainda nao"
-        " esta implementado (falta inspecionar o ecra real) -- a parar aqui.",
-        "error",
-    )
-    await send_message(
-        "⚠️ Recebi o código, mas ainda não sei preencher esse ecrã no site "
-        "(falta confirmar isso). Termina o login manualmente por agora."
-    )
-    return False
+    return await _submit_otp_code(page, code)
 
 
 async def _select_ticket_to_cart(page) -> bool:

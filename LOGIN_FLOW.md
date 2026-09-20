@@ -11,10 +11,12 @@ O login **não usa password**. É um fluxo de **código de acesso enviado por em
 1. Utilizador clica em **"ACESSO PARA SUBSCRITORES"** (canto superior direito)
 2. Abre um modal **"BEM-VINDO À GRELHA"** com um único campo de email
 3. Utilizador submete o email e clica **"Enviar código"**
-4. O site envia um código de acesso para esse email
-5. (presumido, ainda não testado) O utilizador introduz o código recebido para completar o login
+4. O site envia um código de acesso (4 dígitos) para esse email
+5. O modal muda para o ecrã **"VERIFICAR E-MAIL"**: 4 caixas de um dígito cada, botão **"Verificar"** (desativado até as 4 estarem preenchidas) e **"Reenviar código (Ns)"** com contagem decrescente
 
-Isto significa que uma automação completa de login precisa de acesso a uma caixa de correio (via IMAP, webhook, ou colagem manual do código) para ler o OTP — não chega só de Playwright.
+Isto significa que uma automação completa de login precisa do código OTP a partir de algum lado -- decidimos NÃO dar ao agente acesso à caixa de correio: o `purchase_agent.py` pausa neste ponto, pede o código por Telegram, e o utilizador cola-o na conversa.
+
+**Confirmado (ver `purchase_agent._submit_otp_code`):** as 4 caixas são `<input>` dentro do mesmo container do texto "VERIFICAR E-MAIL"; preenche-se uma por uma e clica-se no botão de texto exato `Verificar`. Testado com uma página estática local a simular a estrutura -- ainda por confirmar contra o site real.
 
 ## Passos para reproduzir com Playwright (até ao envio do código)
 
@@ -62,8 +64,9 @@ Ambos os `<form>` da página têm `action="https://portugalf1gp.com/pt"` e `meth
 
 ## Por completar
 
-- [ ] Confirmar com o utilizador qual email usar para o teste real (isto envia um email real e um código de acesso genuíno)
-- [ ] Capturar o ecrã/campo de introdução do código OTP após o envio
-- [ ] Decidir como o código OTP será obtido para a automação: colagem manual, leitura de inbox via IMAP, ou webhook de email
+- [x] Confirmar com o utilizador qual email usar (`SITE_EMAIL` em `.env`)
+- [x] Capturar o ecrã/campo de introdução do código OTP após o envio -- ver acima
+- [x] Decidir como o código OTP será obtido: colagem manual via Telegram (não IMAP -- o agente nunca acede à caixa de correio)
+- [ ] Confirmar o que acontece DEPOIS de um código correto (fecha o modal? redireciona? mostra a área de membro?) -- `_submit_otp_code` assume sucesso se o clique não rebentar, mas isto ainda não foi validado contra o site real
 - [ ] Capturar o pedido de rede exato (endpoint, payload, headers) feito pelo botão "Enviar código", para eventualmente substituir a navegação por chamadas diretas à API
 - [ ] Repetir esta inspeção quando os bilhetes abrirem (21 set 2026, 10:30 GMT+1) — o fluxo pode mudar nessa altura (ex: passar a exigir login antes da compra)
